@@ -15,23 +15,12 @@ Before running this pipeline, ensure you have the following prerequisites:
 
 ## Pipeline Stages
 
-1. **Preprocess**
-    - Downloads uci_abalone dataset and stores it in aws s3. Preprocesses the training data using a Python script preprocess.py.
-    
-2. **Train**
-    - Creates a SageMaker training job using the preprocessed data and specified inbuilt algorithm linear learner algorithm.
-    
-3. **Build**
-    - Builds the SageMaker model from the training job output artifacts and inbuilt algorithm image from AWS ECR.
-    
-4. **Config Deploy**
-    - Configures the SageMaker endpoint with the built model from previous stage.
-    
-5. **Deploy**
-    - Deploys the configured endpoint in SageMaker using deploy.py.
-    
-6. **Predict**
-    - Runs inference tests using the deployed endpoint using predict.py.
+1. **Preprocess** : Downloads uci_abalone dataset and stores it in aws s3. Preprocesses the training data using a Python script preprocess.py.
+2. **Train** : Creates a SageMaker training job using the preprocessed data and specified inbuilt algorithm linear learner algorithm.
+3. **Build** : Builds the SageMaker model from the training job output artifacts and inbuilt algorithm image from AWS ECR.
+4. **Config Deploy** : Configures the SageMaker endpoint with the built model from previous stage.
+5. **Deploy** : Deploys the configured endpoint in SageMaker using deploy.py.
+6. **Predict** : Runs inference tests using the deployed endpoint using predict.py.
 
 ## Environment Variables
 
