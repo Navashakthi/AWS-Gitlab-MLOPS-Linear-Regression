@@ -7,10 +7,15 @@ This repository contains a GitLab CI/CD pipeline for automating the training and
 Before running this pipeline, ensure you have the following prerequisites:
 
 *AWS Account: An active AWS account with permissions to use SageMaker, S3, and IAM services.
+
 *S3 Bucket: An S3 bucket where training data and model artifacts will be stored.
+
 *IAM Role: An IAM role with the necessary permissions for SageMaker to access S3 and other AWS resources such as ECR.
+
 *AWS CLI: AWS CLI configured with your access and secret keys, and the region set.
+
 *GitLab CI/CD: A GitLab project with CI/CD enabled and the environment variables set.
+
 
 ## Pipeline Stages
 
