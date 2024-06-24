@@ -1,6 +1,5 @@
 # AWS-Gitlab-MLOPS-Linear-Regression
 Automated ML workflow in AWS with Gitlab CI\CD and pipeline
-# SageMaker GitLab CI/CD Pipeline
 
 This repository contains a GitLab CI/CD pipeline for automating the training and deployment of a machine learning model using Amazon SageMaker. The pipeline preprocesses data, trains a model, builds the model, configures and deploys a SageMaker endpoint, and finally runs inference tests.
 
