@@ -1,0 +1,86 @@
+image: python:3.8
+
+stages:
+  - preprocess
+  - train
+  - build
+  - config_deploy
+  - deploy
+  - predict
+
+variables:
+  AWS_REGION: aws-region
+  AWS_S3_BUCKET: s3-bucket-name
+  AWS_S3_PREFIX : folder-name
+  SAGEMAKER_ROLE: sagemaker-execution-role
+  AWS_ACCESS_KEY_ID: your-aws-access-key
+  AWS_SECRET_ACCESS_KEY: your-aws-secret-access-key
+  AWS_LR_IMAGE : inbuilt-linear-learner-algorithm-image-uri
+  TRAINING_JOB_NAME : your-training-job-name #linear-regression-training-$(date +%s)
+  MODEL_NAME : your-sagemaker-model-name
+  ENDPOINT_CONFIG_NAME : your-endpoint-config-name
+  ENDPOINT_NAME : your-endpoint-name
+  
+
+cache:
+  paths:
+    - .pip_cache/
+
+before_script:
+  - pip install --cache-dir .pip_cache -r requirements.txt
+  - pip install awscli
+  - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+  - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+  - aws configure set region $AWS_REGION
+
+preprocess:
+  stage: preprocess
+  image: python:3.8
+  script:
+    - python scripts/preprocess.py
+    
+
+train:
+  stage: train
+  image: python:3.8
+  script:
+    - aws sagemaker create-training-job --training-job-name $TRAINING_JOB_NAME --algorithm-specification TrainingImage=$AWS_LR_IMAGE,TrainingInputMode=File --role-arn $SAGEMAKER_ROLE --input-data-config '[{"ChannelName":"train","DataSource":{"S3DataSource":{"S3Uri":"s3://'$AWS_S3_BUCKET'/'$AWS_S3_PREFIX'/train/abalone_dataset1_train.csv","S3DataType":"S3Prefix","S3DataDistributionType":"FullyReplicated"}},"ContentType":"text/csv"}]' --output-data-config '{"S3OutputPath":"s3://'$AWS_S3_BUCKET'/'$AWS_S3_PREFIX'/"}' --resource-config '{"InstanceType":"ml.m4.xlarge","InstanceCount":1,"VolumeSizeInGB":10}' --stopping-condition '{"MaxRuntimeInSeconds":3600}' --hyper-parameters '{"feature_dim":"8","epochs":"16","wd":"0.01","loss":"absolute_loss","predictor_type":"regressor","normalize_data":"True","optimizer":"adam","mini_batch_size":"100","lr_scheduler_step":"100","lr_scheduler_factor":"0.99","lr_scheduler_minimum_lr":"0.0001","learning_rate":"0.1"}'
+    - echo "Training job created. Waiting for completion..."
+
+
+build_model:
+  stage: build
+  image: python:3.8
+  script:
+    - aws sagemaker create-model --model-name $MODEL_NAME --primary-container Image=$AWS_LR_IMAGE,ModelDataUrl=s3://$AWS_S3_BUCKET/$AWS_S3_PREFIX/$TRAINING_JOB_NAME/output/model.tar.gz --execution-role-arn $SAGEMAKER_ROLE
+    - echo "Model created."
+
+
+create_endpoint_config:
+  stage: config_deploy
+  image: python:3.8
+  script:
+    - aws sagemaker create-endpoint-config
+        --endpoint-config-name $ENDPOINT_CONFIG_NAME
+        --production-variants '[{"VariantName":"AllTraffic","ModelName":$MODEL_NAME,"InstanceType":"ml.m4.xlarge","InitialInstanceCount":1,"InitialVariantWeight":1.0}]'
+    - echo "Endpoint created. Waiting for endpoint to be in service..."
+    - aws sagemaker list-endpoint-configs | grep housing-price-prediction-endpoint-config
+
+deploy_endpoint:
+  stage: deploy
+  image: python:3.8
+  script:
+    - aws sagemaker create-endpoint
+        --endpoint-name $ENDPOINT_NAME
+        --endpoint-config-name $ENDPOINT_CONFIG_NAME
+    - echo "Endpoint created. Waiting for endpoint to be in service..."
+
+inference_test:
+  stage: predict
+  image: python:3.8
+  variables:
+    SAGEMAKER_ENDPOINT_NAME: $ENDPOINT_NAME
+   
+  script:  
+    # Run the inference script with necessary arguments
+    - python scripts/predict.py #--endpoint-name $ENDPOINT_NAME

@@ -1,0 +1,6 @@
+# Ignore the my_folder directory
+myfolder/
+# Ignore the .venv directory
+.venv/
+# Ignore notebooks directory
+notebooks/
